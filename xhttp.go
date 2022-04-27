@@ -10,12 +10,12 @@ import (
 )
 
 //post
-func Post(url string, headers map[string]string, bs []byte) ([]byte, error) {
+func Post(url string, headers Values, bs []byte) ([]byte, error) {
 	return post(url, headers, bs)
 }
 
 //post body可以带任意结构体
-func PostJson(url string, headers map[string]string, body interface{}) ([]byte, error) {
+func PostJson(url string, headers Values, body interface{}) ([]byte, error) {
 	bs, err := json.Marshal(body)
 	if err != nil || bs == nil {
 		return nil, err
@@ -25,7 +25,7 @@ func PostJson(url string, headers map[string]string, body interface{}) ([]byte, 
 }
 
 //获取response body数据，并解析
-func GetParseData(url string, headers map[string]string, data interface{}) error {
+func GetParseData(url string, headers Values, data interface{}) error {
 	bs, status, err := get(url, headers)
 	if err == nil && status == 200 && bs != nil {
 		if err := json.Unmarshal(bs, &data); err != nil {
@@ -36,13 +36,13 @@ func GetParseData(url string, headers map[string]string, data interface{}) error
 }
 
 //get
-func Get(url string, headers map[string]string) ([]byte, int, error) {
+func Get(url string, headers Values) ([]byte, int, error) {
 	return get(url, headers)
 }
 
 //get
 //-1 failure
-func get(url string, headers map[string]string) ([]byte, int, error) {
+func get(url string, headers Values) ([]byte, int, error) {
 	transport := http.Transport{
 		Dial:              dialTimeout,
 		DisableKeepAlives: true,
@@ -75,7 +75,7 @@ func get(url string, headers map[string]string) ([]byte, int, error) {
 }
 
 //post
-func post(url string, headers map[string]string, bs []byte) ([]byte, error) {
+func post(url string, headers Values, bs []byte) ([]byte, error) {
 	//
 	req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(bs))
 	if err != nil {

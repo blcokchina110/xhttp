@@ -8,7 +8,10 @@ import (
 func TestGet(t *testing.T) {
 	url := "https://ip.cn/api/index?ip=&type=0"
 
-	bs, code, err := Get(url, nil)
+	headers := make(Values)
+	headers.Set("Content-Type", "application/json")
+
+	bs, code, err := Get(url, headers)
 	fmt.Println(string(bs), code, err)
 
 	type data struct {
