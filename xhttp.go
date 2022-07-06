@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http"
+	"net/url"
 	"time"
 )
 
@@ -42,17 +43,13 @@ func Get(url string, headers Values) ([]byte, int, error) {
 
 //get
 //-1 failure
-func get(url string, headers Values) ([]byte, int, error) {
-	transport := http.Transport{
-		Dial:              dialTimeout,
-		DisableKeepAlives: true,
+func get(urlAddr string, headers Values) ([]byte, int, error) {
+	//check url
+	if _, err := url.ParseRequestURI(urlAddr); err != nil {
+		return nil, -1, err
 	}
 
-	client := http.Client{
-		Transport: &transport,
-	}
-
-	req, err := http.NewRequest(http.MethodGet, url, nil)
+	req, err := http.NewRequest(http.MethodGet, urlAddr, nil)
 	if err != nil {
 		return nil, -1, err
 	}
@@ -61,6 +58,8 @@ func get(url string, headers Values) ([]byte, int, error) {
 		req.Header.Add(k, v)
 	}
 
+	//create http client
+	client := httpClient()
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, -1, err
@@ -75,26 +74,22 @@ func get(url string, headers Values) ([]byte, int, error) {
 }
 
 //post
-func post(url string, headers Values, bs []byte) ([]byte, error) {
-	//
-	req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(bs))
-	if err != nil {
+func post(urlAddr string, headers Values, bs []byte) ([]byte, error) {
+	//check url
+	if _, err := url.ParseRequestURI(urlAddr); err != nil {
 		return nil, err
 	}
 
-	//
-	transport := http.Transport{
-		Dial:              dialTimeout,
-		DisableKeepAlives: true,
+	req, err := http.NewRequest(http.MethodPost, urlAddr, bytes.NewReader(bs))
+	if err != nil {
+		return nil, err
 	}
-	client := http.Client{
-		Transport: &transport,
-	}
-	//
+	//header set
 	for k, v := range headers {
 		req.Header.Set(k, v)
 	}
 
+	client := httpClient()
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
@@ -102,6 +97,18 @@ func post(url string, headers Values, bs []byte) ([]byte, error) {
 	defer resp.Body.Close()
 
 	return ioutil.ReadAll(resp.Body)
+}
+
+//创建http client
+func httpClient() http.Client {
+	transport := http.Transport{
+		Dial:              dialTimeout,
+		DisableKeepAlives: true,
+	}
+	client := http.Client{
+		Transport: &transport,
+	}
+	return client
 }
 
 //超时处理
