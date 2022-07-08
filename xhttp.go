@@ -10,6 +10,10 @@ import (
 	"time"
 )
 
+const (
+	timeoutSecond = 10
+)
+
 //post
 func Post(url string, headers Values, bs []byte) ([]byte, error) {
 	return post(url, headers, bs)
@@ -25,15 +29,26 @@ func PostJson(url string, headers Values, body interface{}) ([]byte, error) {
 	return post(url, headers, bs)
 }
 
+//post并解析返回值
+func PostWithInterface(url string, headers Values, body interface{}, data interface{}) error {
+	bs, err := json.Marshal(body)
+	if err != nil {
+		return err
+	}
+	resultBytes, err := post(url, headers, bs)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(resultBytes, &data)
+}
+
 //获取response body数据，并解析
 func GetParseData(url string, headers Values, data interface{}) error {
-	bs, status, err := get(url, headers)
-	if err == nil && status == 200 && bs != nil {
-		if err := json.Unmarshal(bs, &data); err != nil {
-			return err
-		}
+	bs, _, err := get(url, headers)
+	if err != nil {
+		return err
 	}
-	return err
+	return json.Unmarshal(bs, &data)
 }
 
 //get
@@ -73,7 +88,7 @@ func get(urlAddr string, headers Values) ([]byte, int, error) {
 	return body, resp.StatusCode, nil
 }
 
-//post
+//post 
 func post(urlAddr string, headers Values, bs []byte) ([]byte, error) {
 	//check url
 	if _, err := url.ParseRequestURI(urlAddr); err != nil {
@@ -113,7 +128,7 @@ func httpClient() http.Client {
 
 //超时处理
 func dialTimeout(network, addr string) (net.Conn, error) {
-	conn, err := net.DialTimeout(network, addr, time.Second*10)
+	conn, err := net.DialTimeout(network, addr, time.Second*time.Duration(timeoutSecond))
 	if err != nil {
 		return conn, err
 	}

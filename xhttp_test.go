@@ -6,25 +6,21 @@ import (
 )
 
 func TestGet(t *testing.T) {
-	url := "api.github.com/repos/ethereum/go-ethereum/releases/latest"
+	url := "http://ip-api.com/json/"
 
-	bs, code, err := Get(url, nil)
+	bs, status, err := Get(url, nil)
+	fmt.Println(string(bs), status, err)
 
-	fmt.Println(string(bs), code, err)
+	type data struct {
+		Code int `json:"code"`
+		Data struct {
+			BlockNumber int64 `json:"blockNumber"`
+		} `json:"data"`
+		Msg string `json:"msg"`
+	}
 
-	// headers := make(Values)
-	// headers.Set("Content-Type", "application/json")
+	var d data
+	err = GetParseData(url, nil, &d)
 
-	// bs, code, err := Get(url, headers)
-	// fmt.Println(string(bs), code, err)
-
-	// type data struct {
-	// 	RS       int    `json:"rs"`
-	// 	Code     int    `json:"code"`
-	// 	Address  string `json:"address"`
-	// 	IsDomain int    `json:"isDomain"`
-	// }
-	// var d data
-	// err = GetParseData(url, nil, &d)
-	// fmt.Println(d)
+	fmt.Println(d.Data.BlockNumber, err)
 }
