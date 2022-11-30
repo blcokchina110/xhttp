@@ -6,10 +6,10 @@ import (
 )
 
 func TestGet(t *testing.T) {
-	url := "http://ip-api.com/json/"
+	url := "http://ip-api.com/json/1111"
 
-	bs, status, err := Get(url, nil)
-	fmt.Println(string(bs), status, err)
+	bs, err := Get(url, nil)
+	fmt.Println(string(bs), err)
 
 	type data struct {
 		Code int `json:"code"`
@@ -19,7 +19,7 @@ func TestGet(t *testing.T) {
 		Msg string `json:"msg"`
 	}
 
-	var d data
+ 	var d data
 	err = GetParseData(url, nil, &d)
 
 	fmt.Println(d.Data.BlockNumber, err)

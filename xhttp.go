@@ -3,6 +3,8 @@ package xhttp
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"io/ioutil"
 	"net"
 	"net/http"
@@ -14,6 +16,11 @@ const (
 	timeoutSecond = 10
 )
 
+var (
+	errResponseBodyNil = errors.New("response body is null")
+	errHttpRequest     = "request error statusCode:%v"
+)
+
 //post
 func Post(url string, headers Values, bs []byte) ([]byte, error) {
 	return post(url, headers, bs)
@@ -22,7 +29,7 @@ func Post(url string, headers Values, bs []byte) ([]byte, error) {
 //post body可以带任意结构体
 func PostJson(url string, headers Values, body interface{}) ([]byte, error) {
 	bs, err := json.Marshal(body)
-	if err != nil || bs == nil {
+	if err != nil {
 		return nil, err
 	}
 
@@ -44,7 +51,7 @@ func PostWithInterface(url string, headers Values, body interface{}, data interf
 
 //获取response body数据，并解析
 func GetParseData(url string, headers Values, data interface{}) error {
-	bs, _, err := get(url, headers)
+	bs, err := get(url, headers)
 	if err != nil {
 		return err
 	}
@@ -52,21 +59,20 @@ func GetParseData(url string, headers Values, data interface{}) error {
 }
 
 //get
-func Get(url string, headers Values) ([]byte, int, error) {
+func Get(url string, headers Values) ([]byte, error) {
 	return get(url, headers)
 }
 
 //get
-//-1 failure
-func get(urlAddr string, headers Values) ([]byte, int, error) {
+func get(urlAddr string, headers Values) ([]byte, error) {
 	//check url
 	if _, err := url.ParseRequestURI(urlAddr); err != nil {
-		return nil, -1, err
+		return nil, err
 	}
 
 	req, err := http.NewRequest(http.MethodGet, urlAddr, nil)
 	if err != nil {
-		return nil, -1, err
+		return nil, err
 	}
 
 	for k, v := range headers {
@@ -77,18 +83,27 @@ func get(urlAddr string, headers Values) ([]byte, int, error) {
 	client := httpClient()
 	resp, err := client.Do(req)
 	if err != nil {
-		return nil, -1, err
+		return nil, err
 	}
 	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, -1, err
+	//!=200 return
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf(errHttpRequest, resp.StatusCode)
 	}
 
-	return body, resp.StatusCode, nil
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(body) == 0 {
+		return nil, errResponseBodyNil
+	}
+
+	return body, nil
 }
 
-//post 
+//post
 func post(urlAddr string, headers Values, bs []byte) ([]byte, error) {
 	//check url
 	if _, err := url.ParseRequestURI(urlAddr); err != nil {
@@ -110,8 +125,21 @@ func post(urlAddr string, headers Values, bs []byte) ([]byte, error) {
 		return nil, err
 	}
 	defer resp.Body.Close()
+	//!=200 return
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf(errHttpRequest, resp.StatusCode)
+	}
 
-	return ioutil.ReadAll(resp.Body)
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(body) == 0 {
+		return nil, errResponseBodyNil
+	}
+
+	return body, nil
 }
 
 //创建http client
